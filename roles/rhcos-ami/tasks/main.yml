@@ -1,0 +1,6 @@
+---
+- name: Upload RHCOS VMDK to S3 
+  include_tasks: rhcos-vmdk-s3.yml
+
+- name: Create RHCOS AMI
+  include_tasks: rhcos-ami-create.yml

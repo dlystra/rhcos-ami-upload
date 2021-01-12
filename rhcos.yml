@@ -1,0 +1,5 @@
+#!/usr/local/bin/ansible-playbook --inventory=inventory.yaml
+- name: Upload Latest RHCOS Image
+  hosts: localhost
+  roles:
+    - rhcos-ami

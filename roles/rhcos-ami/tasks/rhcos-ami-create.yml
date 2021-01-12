@@ -1,0 +1,13 @@
+#!/usr/local/bin/ansible-playbook --inventory=inventory.yaml
+- name: Create containers.json File
+  template:
+    src: containers.j2
+    dest: /tmp/containers.json
+    mode: 0664
+
+- name: Import Snapshot of RHCOS VMDK
+  shell: |
+    aws ec2 import-snapshot --region {{ cloud_region }} \
+    --description "rhcos-{{ rhcos_version }}-x86_64-aws.x86_64" \
+    --disk-container \
+    Format=vmdk,UserBucket="{S3Bucket={{ vm_import_bucket_name }},S3Key=rhcos-{{ rhcos_version }}-x86_64-aws.x86_64.vmdk}"

@@ -1,0 +1,29 @@
+#!/usr/local/bin/ansible-playbook --inventory=inventory.yaml
+- name: Place OpenShift RHCOS Image | rhcos-aws.x86_64.vmdk.gz
+  get_url:
+    url: 'https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.6/latest/rhcos-aws.x86_64.vmdk.gz'
+    dest: '/tmp/rhcos-aws.x86_64.vmdk.gz'
+    mode: 0775
+
+- name: 'Create AWS S3 Bucket: {{ vm_import_bucket_name }}'
+  aws_s3:
+    bucket: '{{ vm_import_bucket_name }}'
+    region: '{{ cloud_region }}'
+    mode: create
+    aws_access_key: '{{ cloud_key_id_special }}'
+    aws_secret_key: '{{ cloud_key_secret_special }}'
+  ignore_errors: True
+
+- name: Uncompress RHCOS VMDK
+  shell: gunzip /tmp/rhcos-aws.x86_64.vmdk.gz
+
+- name: 'Push RHCOS VMDK to AWS S3 Bucket: {{ vm_import_bucket_name }}' 
+  aws_s3:
+    mode: put
+    bucket: '{{ vm_import_bucket_name }}'
+    region: '{{ cloud_region }}'
+    object: 'rhcos-{{ rhcos_version }}-x86_64-aws.x86_64.vmdk'
+    src: /tmp/rhcos-aws.x86_64.vmdk
+    aws_access_key: '{{ cloud_key_id_special }}'
+    aws_secret_key: '{{ cloud_key_secret_special }}'
+
