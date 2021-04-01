@@ -1,5 +1,6 @@
 ---
-rhcos_version: 4.6.8
+ocp_version: 4.7
+rhcos_version: 4.7.0
 img_arch: x86_64
 vm_import_bucket_name: rhcos-vmdk-import
 user_home_dir: "{{ lookup('env', 'HOME') }}"
