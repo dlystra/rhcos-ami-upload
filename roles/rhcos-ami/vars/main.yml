@@ -1,7 +1,7 @@
 ---
 ocp_version: 4.8
 rhcos_version: 4.8.2 
-img_arch: x86_64
+rhcos_arch: x86_64
 import_bucket_name: rhcos-vmdk-import
 user_home_dir: "{{ lookup('env', 'HOME') }}"
 cloud_region: "{{ lookup('ini', 'region section=default file={{ user_home_dir }}/.aws/config') }}"
