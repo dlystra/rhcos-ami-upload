@@ -3,26 +3,39 @@
   set_fact:
     rand_id: '{{ 100000 | random }}'
 
+- name: Create containers.json file
+  template:
+    src: containers.j2
+    dest: /tmp/containers.json
+ 
 - name: Import Snapshot of RHCOS VMDK
-  shell: |
+  command: |
     aws ec2 import-snapshot --region {{ cloud_region }} \
     --description "rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}" \
-    --tag-specifications ResourceType=import-snapshot-task,Tags="[{Key=randId,Value={{ ansible_facts.date_time.date }}-{{ rand_id }}}]" \
-    --disk-container \
-    Format=vmdk,UserBucket="{S3Bucket={{ vm_import_bucket_name }},S3Key=rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}.vmdk}"
+    --disk-container "file:///tmp/containers.json" \
+    --output text --query 'ImportTaskId'
+  register: snapshot_import
 
-- name: Pause For 5 minutes to Import Snapshot
-  pause:
-    minutes: 5
-
-- name: Get Snapshot ID
+- name: Wait for snapshot import to complete
   shell: |
     aws ec2 describe-import-snapshot-tasks \
     --region {{ cloud_region }} \
-    --filters Name=tag:randId,Values={{ ansible_facts.date_time.date }}-{{ rand_id }} \
-    --query 'ImportSnapshotTasks[*].SnapshotTaskDetail.SnapshotId' \
+    --import-task-ids "{{ snapshot_import.stdout }}" \
+    --query 'ImportSnapshotTasks[*].SnapshotTaskDetail.Status' \
     --output text
+  register: snapshot_status
+  until: snapshot_status.stdout == 'completed'
+  retries: 60
+  delay: 30
+
+- name: Get snapshot id
+  shell: |
+    aws ec2 describe-import-snapshot-tasks \
+    --import-task-ids "{{ snapshot_import.stdout }}" \
+    --output text \
+    --query 'ImportSnapshotTasks[*].SnapshotTaskDetail.SnapshotId'
   register: snapshot_id
+   
 
 - name: Create RHCOS AMI
   ec2_ami:
@@ -37,7 +50,7 @@
     aws_secret_key: '{{ cloud_key_secret_special }}'
     device_mapping:
       - device_name: /dev/xvda
-        snapshot_id: '{{ snapshot_id.stdout }}'
+        snapshot_id: "{{ snapshot_id.stdout }}"
         delete_on_termination: true
     tags: '{"Name":"RHCOS {{ rhcos_version }}"}'
     launch_permissions:
