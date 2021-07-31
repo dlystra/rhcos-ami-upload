@@ -1,7 +1,7 @@
 #!/usr/local/bin/ansible-playbook --inventory=inventory.yaml
-- name: Place OpenShift RHCOS Image | rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}.vmdk.gz
+- name: Download OpenShift RHCOS Image | rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}.vmdk.gz
   get_url:
-    url: https://mirror.openshift.com/pub/openshift-v4/{{ img_arch }}/dependencies/rhcos/{{ ocp_version }}/{{ rhcos_version }}/rhcos-aws.{{ img_arch }}.vmdk.gz
+    url: "https://mirror.openshift.com/pub/openshift-v4/{{ img_arch }}/dependencies/rhcos/{{ ocp_version }}/{{ rhcos_version }}/rhcos-aws.{{ img_arch }}.vmdk.gz"
     dest: '/tmp/rhcos-aws.{{ img_arch }}.vmdk.gz'
     mode: 0644
 
