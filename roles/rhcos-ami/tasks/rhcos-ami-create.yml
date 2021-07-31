@@ -2,9 +2,17 @@
   template:
     src: containers.j2
     dest: /tmp/containers.json
+
+- name: Create VMImport Role in AWS
+  import_role:
+    name: rubrik-devops.aws-vmimport-role
+  vars:
+    s3_bucket_name: "{{ s3_bucket }}"
+    s3_bucket_arn: "{{ s3_arn_prefix }}:::{{  s3_bucket }}"
+  when: (create_iam_role | bool)
  
 - name: RHCOS AWS AMI | Import Snapshot of RHCOS VMDK
-  command: |
+  shell: |
     aws ec2 import-snapshot --region {{ cloud_region }} \
     --description "rhcos-{{ rhcos_version }}-{{ rhcos_arch }}-aws.{{ rhcos_arch }}" \
     --disk-container "file:///tmp/containers.json" \
