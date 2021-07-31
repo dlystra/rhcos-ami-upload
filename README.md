@@ -5,6 +5,9 @@ by default does not publish coreos images to aws govcloud.
 Additionally, coreos and openshift rarely share the same release cadence. It is not unusual
 for only one or two coreos releases per openshift release. 
 
+There is a pause play that is set to 5 minutes. This is to give AWS enough time to upload
+the snapshot before moving on to the findal steps.
+
 ## Variables
 |Name | Description |
 |------|------|
