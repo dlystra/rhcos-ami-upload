@@ -7,13 +7,13 @@
   shell: |
     aws ec2 import-snapshot --region {{ cloud_region }} \
     --description "rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}" \
-    --tag-specifications ResourceType=import-snapshot-task,Tags="{Key=randId,Value={{ ansible_facts.date_time.date }}-{{ rand_id }}}" \
+    --tag-specifications ResourceType=import-snapshot-task,Tags="[{Key=randId,Value={{ ansible_facts.date_time.date }}-{{ rand_id }}}]" \
     --disk-container \
     Format=vmdk,UserBucket="{S3Bucket={{ vm_import_bucket_name }},S3Key=rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}.vmdk}"
 
-- name: Pause For 4 minutes to Import Snapshot
+- name: Pause For 5 minutes to Import Snapshot
   pause:
-    minutes: 4
+    minutes: 5
 
 - name: Get Snapshot ID
   shell: |
