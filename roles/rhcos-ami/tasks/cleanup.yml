@@ -1,0 +1,14 @@
+---
+- name: RHCOS AWS AMI | Remove containers.json template
+  file:
+    state: absent
+    path: "{{ item }}"
+  loop:
+    - /tmp/containers.json
+    - '/tmp/rhcos-aws.{{ img_arch }}.vmdk'
+
+- name: 'Delete AWS S3 Bucket: {{ vm_import_bucket_name }}'
+  aws_s3:
+    bucket: '{{ vm_import_bucket_name }}'
+    region: '{{ cloud_region }}'
+    mode: delete
