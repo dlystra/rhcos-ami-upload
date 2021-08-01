@@ -1,10 +1,10 @@
 ---
-- name: RHCOS | VMDK Management
+- name: RHCOS AWS AMI | VMDK Management
   include_tasks: rhcos-vmdk-s3.yml
 
-- name: RHCOS | Create AMI
+- name: RHCOS AWS AMI | Create AMI
   include_tasks: rhcos-ami-create.yml
 
-- name: RHCOS | Cleanup local files
+- name: RHCOS AWS AMI | Cleanup local files
   include_tasks: cleanup.yml
 
