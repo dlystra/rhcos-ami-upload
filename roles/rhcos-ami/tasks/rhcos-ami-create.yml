@@ -1,34 +1,41 @@
-#!/usr/local/bin/ansible-playbook --inventory=inventory.yaml
-- name: Set Random ID
-  set_fact:
-    rand_id: '{{ 100000 | random }}'
+- name: RHCOS AWS AMI | Create containers.json file
+  template:
+    src: containers.j2
+    dest: /tmp/containers.json
 
-- name: Import Snapshot of RHCOS VMDK
+- name: RHCOS AWS AMI | Import Snapshot of RHCOS VMDK
   shell: |
     aws ec2 import-snapshot --region {{ cloud_region }} \
-    --description "rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}" \
-    --tag-specifications ResourceType=import-snapshot-task,Tags="{Key=randId,Value={{ ansible_facts.date_time.date }}-{{ rand_id }}}" \
-    --disk-container \
-    Format=vmdk,UserBucket="{S3Bucket={{ vm_import_bucket_name }},S3Key=rhcos-{{ rhcos_version }}-{{ img_arch }}-aws.{{ img_arch }}.vmdk}"
+    --description "rhcos-{{ rhcos_version }}-{{ rhcos_arch }}-aws.{{ rhcos_arch }}" \
+    --disk-container "file:///tmp/containers.json" \
+    --output text --query 'ImportTaskId'
+  register: snapshot_import
 
-- name: Pause For 4 minutes to Import Snapshot
-  pause:
-    minutes: 4
-
-- name: Get Snapshot ID
+- name: RHCOS AWS AMI | Wait for snapshot process to complete
   shell: |
     aws ec2 describe-import-snapshot-tasks \
-    --region us-gov-west-1 \
-    --filters Name=tag:randId,Values={{ ansible_facts.date_time.date }}-{{ rand_id }} \
-    --query 'ImportSnapshotTasks[*].SnapshotTaskDetail.SnapshotId' \
+    --region {{ cloud_region }} \
+    --import-task-ids "{{ snapshot_import.stdout }}" \
+    --query 'ImportSnapshotTasks[*].SnapshotTaskDetail.Status' \
     --output text
+  register: snapshot_status
+  until: snapshot_status.stdout == 'completed'
+  retries: 60
+  delay: 30
+
+- name: RHCOS AWS AMI | Gather snapshot id
+  shell: |
+    aws ec2 describe-import-snapshot-tasks \
+    --import-task-ids "{{ snapshot_import.stdout }}" \
+    --output text \
+    --query 'ImportSnapshotTasks[*].SnapshotTaskDetail.SnapshotId'
   register: snapshot_id
 
-- name: Create RHCOS AMI
+- name: RHCOS AWS AMI | Create RHCOS AMI
   ec2_ami:
     name: "RHCOS {{ rhcos_version }} AWS VMDK"
     region: "{{ cloud_region }}"
-    architecture: "{{ img_arch }}"
+    architecture: "{{ rhcos_arch }}"
     description: "RHCOS {{ rhcos_version }} AWS VMDK"
     enhanced_networking: yes
     virtualization_type: hvm
@@ -37,16 +44,8 @@
     aws_secret_key: '{{ cloud_key_secret_special }}'
     device_mapping:
       - device_name: /dev/xvda
-        snapshot_id: '{{ snapshot_id.stdout }}'
+        snapshot_id: "{{ snapshot_id.stdout }}"
         delete_on_termination: true
     tags: '{"Name":"RHCOS {{ rhcos_version }}"}'
     launch_permissions:
       group_names: ['all']
-
-- name: 'Delete AWS S3 Bucket: {{ vm_import_bucket_name }}'
-  aws_s3:
-    bucket: '{{ vm_import_bucket_name }}'
-    region: '{{ cloud_region }}'
-    mode: delete
-    aws_access_key: '{{ cloud_key_id_special }}'
-    aws_secret_key: '{{ cloud_key_secret_special }}'

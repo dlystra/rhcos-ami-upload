@@ -1,6 +1,10 @@
 ---
-- name: Upload RHCOS VMDK to S3 
+- name: RHCOS AWS AMI | VMDK Management
   include_tasks: rhcos-vmdk-s3.yml
 
-- name: Create RHCOS AMI
+- name: RHCOS AWS AMI | Create AMI
   include_tasks: rhcos-ami-create.yml
+
+- name: RHCOS AWS AMI | Cleanup local files
+  include_tasks: cleanup.yml
+
