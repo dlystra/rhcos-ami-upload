@@ -1,4 +1,0 @@
-- name: RHCOS AWS AMI | Upload RHCOS Image
-  hosts: localhost
-  roles:
-    - rhcos-ami
